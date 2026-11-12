@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zenvia Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f6;--panel:#fff;--ink:#16203f;--mute:#667091;--line:#dde2ee;--brand:#1f2a5a;--accent:#f0a02e;--me:#1f2a5a;--meink:#fff;--bot:#f3f5fa}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0e1327;--panel:#161d38;--ink:#e8ecfa;--mute:#98a2c8;--line:#27305a;--brand:#8fa2ff;--me:#3a4bb5;--bot:#1d2546}}
+:root[data-theme=dark]{--bg:#0e1327;--panel:#161d38;--ink:#e8ecfa;--mute:#98a2c8;--line:#27305a;--brand:#8fa2ff;--me:#3a4bb5;--bot:#1d2546}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{font-family:Manrope,system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);display:flex}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+aside{width:300px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px;gap:14px;overflow:auto}
+.logo{display:flex;gap:10px;align-items:center}
+.logo b{width:38px;height:38px;border-radius:12px;background:var(--brand);color:var(--panel);display:grid;place-items:center;font-weight:800}
+.logo h1{font-size:17px;margin:0}.logo small{color:var(--mute);display:block;font-size:12px}
+h2{font-size:13px;margin:0 0 8px;color:var(--mute);font-weight:700}
+.modes{display:grid;gap:6px}
+.mode{text-align:left;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:none}
+.mode.on{background:var(--brand);color:var(--panel);border-color:var(--brand)}
+.mode span{display:block;font-size:11px;opacity:.75}
+.row{display:flex;gap:6px}
+input,select,textarea{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 10px;width:100%}
+.btn{border:0;border-radius:10px;padding:9px 13px;background:var(--brand);color:var(--panel);font-weight:700}
+.btn.alt{background:none;border:1px solid var(--line);color:var(--ink)}
+.rem{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:6px;font-size:13px}
+.rem.done{opacity:.5;text-decoration:line-through}.rem.due{border-color:var(--accent);background:rgba(240,160,46,.14)}
+.rem small{display:block;color:var(--mute)}
+.rem button{border:0;background:none;font-size:16px}
+main{flex:1;display:flex;flex-direction:column;min-width:0;height:100%}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;background:var(--panel);border-bottom:1px solid var(--line);gap:10px}
+header div{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#log{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:min(720px,88%);padding:11px 15px;border-radius:16px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word}
+.msg.bot{background:var(--bot);border-bottom-left-radius:4px;align-self:flex-start}
+.msg.me{background:var(--me);color:var(--meink);border-bottom-right-radius:4px;align-self:flex-end}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 20px 8px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:6px 12px;font-size:13px}
+.bar{display:flex;gap:8px;padding:12px 20px 18px;background:var(--panel);border-top:1px solid var(--line);align-items:flex-end}
+.bar textarea{resize:none;max-height:120px}
+.mic{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--bg);font-size:18px;flex:none}
+.mic.live{background:#d64545;color:#fff;animation:p 1.2s infinite}
+@keyframes p{50%{box-shadow:0 0 0 8px rgba(214,69,69,.2)}}
+@media(prefers-reduced-motion:reduce){.mic.live{animation:none}}
+.send{height:44px;flex:none}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);max-width:420px;width:92%}
+dialog label{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px}
+#menu{display:none}
+@media(max-width:820px){aside{position:fixed;inset:0 25% 0 0;z-index:5;transform:translateX(-105%);transition:.2s}aside.open{transform:none}#menu{display:inline-block}}
+
+[hidden]{display:none!important}
+:root{--ok:#1f9d63;--bad:#d64545;--r:12px}
+body{font-size:15px;-webkit-font-smoothing:antialiased}
+aside{width:288px}
+.mode{border:0;border-left:3px solid transparent;border-radius:10px;padding:10px 12px;font-weight:700}
+.mode:hover{background:var(--bg)}
+.mode.on{background:var(--bg);color:var(--ink);border-left-color:var(--accent)}
+header{padding:12px 24px;min-height:60px}
+header label{font-size:13px;color:var(--mute);display:flex;gap:6px;align-items:center}
+#title{font-size:16px}
+#badge{background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:12px}
+.msg{font-size:15px}
+.msg.md{white-space:normal}
+.msg.bot.md{background:var(--panel);border:1px solid var(--line);border-radius:14px 14px 14px 4px}
+.msg.md p{margin:0 0 .6em}.msg.md p:last-child{margin:0}
+.msg.md ul,.msg.md ol{margin:.2em 0 .6em;padding-left:1.3em}.msg.md h4{margin:.4em 0 .3em;font-size:15px}
+.msg.md code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:13px}
+.msg.md pre{background:var(--bg);padding:10px 12px;border-radius:10px;overflow:auto;margin:.4em 0}.msg.md pre code{padding:0;background:none}
+.wel{margin:auto;max-width:640px;width:100%}.wel h2{font-size:26px;margin:0 0 8px;color:var(--ink)}.wel p{color:var(--mute);line-height:1.6;margin:0}
+.wg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.wc{text-align:left;padding:14px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+.wc:hover{border-color:var(--brand)}.wc b{display:block;margin-bottom:2px}.wc span{font-size:13px;color:var(--mute)}
+@media(max-width:560px){.wg{grid-template-columns:1fr}}
+#vo{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;text-align:center}
+.vtop{position:absolute;top:18px;left:24px;right:24px;display:flex;justify-content:space-between;align-items:center}
+#vst{font-weight:700;color:var(--mute)}
+.orb{width:150px;height:150px;border-radius:50%;border:0;background:var(--brand);color:#fff;position:relative;display:grid;place-items:center}
+.orb::before,.orb::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:2px solid var(--accent);opacity:0}
+#vo[data-s=listen] .orb::before{animation:ring 1.8s infinite}#vo[data-s=listen] .orb::after{animation:ring 1.8s .9s infinite}
+#vo[data-s=speak] .orb{animation:br 1.1s ease-in-out infinite}
+#vo[data-s=think] .orb{background:var(--mute);animation:br 2s ease-in-out infinite}
+@keyframes ring{from{transform:scale(.9);opacity:.8}to{transform:scale(1.35);opacity:0}}
+@keyframes br{50%{transform:scale(1.08)}}
+@media(prefers-reduced-motion:reduce){.orb,.orb::before,.orb::after{animation:none!important}}
+.vtr{min-height:30px;font-size:20px;font-weight:700;max-width:640px;margin:0}
+.vrp{max-width:640px;max-height:28vh;overflow:auto;color:var(--mute);line-height:1.6}
+.vctl{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:center}.vctl select{width:auto;max-width:220px}.vctl input[type=range]{width:110px;padding:0}
+#qz{flex:1;overflow:auto;padding:28px 20px}.qw{max-width:680px;margin:0 auto}
+.qh{font-size:24px;margin:0 0 6px;color:var(--ink)}.qp{color:var(--mute);margin:0 0 18px;line-height:1.6}
+.qw label{display:block;font-size:12px;color:var(--mute);margin:14px 0 5px}
+.qrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qgo{margin-top:20px;padding:12px 22px}.qst{margin-top:12px;color:var(--mute);min-height:20px}.qs{font-size:14px;margin:26px 0 8px}
+.qtop{display:flex;justify-content:space-between;color:var(--mute);font-size:13px;font-weight:700}
+.qbar{height:6px;background:var(--line);border-radius:9px;margin:8px 0 22px;overflow:hidden}.qbar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.qq{font-size:21px;line-height:1.45;margin:0 0 12px;color:var(--ink)}
+.qo{display:grid;gap:10px;margin:14px 0}
+.qopt{display:flex;gap:12px;align-items:center;text-align:left;padding:13px 14px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);color:var(--ink)}
+.qopt:not(:disabled):hover{border-color:var(--brand)}.qopt:disabled{cursor:default}
+.qopt b{width:28px;height:28px;border-radius:8px;background:var(--bg);display:grid;place-items:center;flex:none}
+.qopt.right{border-color:var(--ok);background:rgba(31,157,99,.12)}.qopt.wrong{border-color:var(--bad);background:rgba(214,69,69,.12)}
+.qx{min-height:24px;line-height:1.6}.qfoot{display:flex;gap:10px;justify-content:space-between;margin-top:18px;flex-wrap:wrap}
+.qres{display:flex;gap:20px;align-items:center;margin-bottom:10px}
+.qring{width:96px;height:96px;border-radius:50%;background:conic-gradient(var(--accent) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center;flex:none}
+.qring b{width:74px;height:74px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:20px}
+.qrev{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;background:var(--panel);line-height:1.5}
+.qrev .okc{color:var(--ok);font-weight:700}.qrev small{color:var(--mute)}
+/* v5.1 additions: voice error state, quiz spinner/selection */
+#vo[data-s=error] .orb{background:var(--bad)}
+#verr{color:var(--bad);max-width:640px;margin:0;font-size:14px;line-height:1.5}#verr:empty{display:none}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spin{animation:none}}
+.qopt.sel{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.qrev.good{border-color:var(--ok)}.qrev.bad{border-color:var(--bad)}
+</style>
+</head>
+<body>
+<aside id="side">
+  <div class="logo"><b>Z</b><div><h1>Zenvia Assistant</h1><small>Study, prepare, stay on track</small></div></div>
+  <section><h2>Mode</h2><div class="modes" id="modes"></div></section>
+  <button class="btn" id="vside">Start voice assistant</button>
+  <section>
+    <h2>Task reminders</h2>
+    <input id="rt" placeholder="What do you need to do?" aria-label="Task">
+    <div class="row" style="margin-top:6px"><input id="rw" type="datetime-local" aria-label="When"><button class="btn" id="radd">Add</button></div>
+    <div id="rl" style="margin-top:10px"></div>
+    <small style="color:var(--mute)">Tip: type “remind me to call Ravi in 10 minutes” in the chat.</small>
+  </section>
+</aside>
+
+<main>
+  <header>
+    <div><button class="btn alt" id="menu" aria-label="Open menu">☰</button><strong id="title">General assistant</strong><small id="badge" hidden style="display:none;color:var(--mute)"></small></div>
+    <div>
+      <label><input type="checkbox" id="short" style="width:auto" checked> Short answers</label>
+      <label><input type="checkbox" id="speak" style="width:auto"> Read replies aloud</label>
+      <button class="btn alt" id="theme">Theme</button>
+      <button class="btn alt" id="exp">Export</button>
+      <button class="btn alt" id="clr">Clear</button>
+      <button class="btn" id="set" hidden style="display:none" aria-hidden="true" tabindex="-1">API settings</button>
+    </div>
+  </header>
+  <div id="log" aria-live="polite"></div>
+  <div class="chips" id="chips"></div>
+  <div class="bar">
+    <button class="mic" id="mic" aria-label="Dictate a message" title="Dictate a message"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+    <textarea id="in" rows="1" placeholder="Type a message or tap the mic…"></textarea>
+    <button class="btn alt send" id="vmode" title="Hands-free voice conversation">Voice</button><button class="btn send" id="send">Send</button>
+  </div>
+<section id="qz" hidden></section>
+</main>
+
+<div id="vo" hidden role="dialog" aria-modal="true" aria-label="Voice assistant" data-s="idle">
+ <div class="vtop"><span id="vst">Ready</span><button class="btn alt" id="vx">End voice mode</button></div>
+ <button class="orb" id="orb" aria-label="Tap to interrupt or resume"><svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+ <p class="vtr" id="vtr" aria-live="polite"></p><div class="vrp" id="vrp"></div><p id="verr" role="alert"></p>
+ <div class="vctl"><select id="vvoice" aria-label="Voice"></select><label>Speed <input type="range" id="vrate" min="0.8" max="1.3" step="0.05" value="1"></label><button class="btn alt" id="vmute">Pause</button></div>
+ <small style="color:var(--mute)">Say “stop” to end. Tap the circle to interrupt a reply, or to start/stop listening.</small>
+</div>
+
+<dialog id="dlg">
+  <h3 style="margin:0">API settings</h3>
+  <label for="prov">Provider</label>
+  <select id="prov">
+    <option value="anthropic">Anthropic (Claude)</option>
+    <option value="gemini">Google Gemini (OpenAI-compatible)</option>
+    <option value="openai">Other OpenAI-compatible</option>
+  </select>
+  <label for="key">API key</label>
+  <div class="row"><input id="key" type="password" placeholder="Paste your key" autocomplete="off" spellcheck="false"><button class="btn alt" id="showkey" type="button">Show</button></div>
+  <label for="model">Model ID</label>
+  <input id="model" list="models" autocomplete="off" spellcheck="false"><datalist id="models"></datalist>
+  <label for="fallback">Backup model if the main one is busy (optional)</label>
+  <input id="fallback" list="models" autocomplete="off" spellcheck="false" placeholder="e.g. gemini-3.1-flash-lite">
+  <label for="base">Base URL</label>
+  <input id="base" autocomplete="off" spellcheck="false">
+  <small id="endpoint" style="display:block;margin-top:6px;color:var(--mute);word-break:break-all"></small>
+  <p style="font-size:12px;color:var(--mute)">Each provider keeps its own key, model and URL. Leave the API key blank to use the site’s built-in key, if the owner enabled one. Keys are saved only in this browser and sent only to the selected provider. Anyone with access to this browser profile could read them, so use your own device.</p>
+  <div id="testout" style="font-size:13px;min-height:18px;margin-bottom:8px;word-break:break-word"></div>
+  <div class="row" style="justify-content:flex-end;flex-wrap:wrap">
+    <button class="btn alt" id="forget" type="button">Forget key</button>
+    <button class="btn alt" id="test" type="button">Test connection</button>
+    <button class="btn alt" id="cancel" type="button">Cancel</button>
+    <button class="btn" id="save" type="button">Save</button>
+  </div>
+</dialog>
+
+<script>
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const MODES={
+ general:{n:'General assistant',d:'Ask anything',s:'You are Zenvia, a clear, friendly, professional assistant. Keep answers concise and well organised.',chips:['Plan my day','Give me a study tip','Summarise a topic for me']},
+ explain:{n:'Topic explainer',d:'Learn any topic simply',s:'You are Zenvia, an expert teacher. When given a topic, explain it simply: a one-line definition, key ideas, a real-world example, then 3 quick check questions. Adapt depth to the learner.',chips:['Explain REST APIs','Explain machine learning','Explain recursion']},
+ interview:{n:'Interview coach',d:'Practice and get feedback',s:'You are Zenvia, a professional interview coach. Help with HR, behavioural and technical questions. For mock interviews, ask ONE question at a time, wait for the answer, then give brief feedback (strengths, improvements, a better sample answer) and ask the next question. Teach the STAR method when relevant.',chips:['Start a mock interview','Tell me about yourself: help me answer','Common HR questions','How to handle salary talks','Strengths and weaknesses']},
+ planner:{n:'Task planner',d:'Break goals into steps',s:'You are Zenvia, a productivity coach. Turn goals into small prioritised steps with realistic time estimates, and remind the user they can add reminders in the sidebar.',chips:['Plan my study week','Break down my project','Build a daily routine']},
+ quiz:{n:'Quiz',d:'Test yourself on any topic',s:'You are Zenvia, a friendly quiz master and tutor.',chips:[]}
+};
+let mode=store.get('mode','general'),hist=store.get('hist',[]),rems=store.get('rems',[]);
+
+/* ---------- UI ---------- */
+function renderModes(){$('modes').innerHTML='';Object.entries(MODES).forEach(([k,m])=>{const b=document.createElement('button');b.className='mode'+(k===mode?' on':'');b.innerHTML=m.n+'<span>'+m.d+'</span>';b.onclick=()=>setMode(k);$('modes').appendChild(b)});$('title').textContent=MODES[mode].n}
+function renderChips(){$('chips').innerHTML='';MODES[mode].chips.forEach(c=>{const b=document.createElement('button');b.className='chip';b.textContent=c;b.onclick=()=>send(c);$('chips').appendChild(b)})}
+function add(role,text){const d=document.createElement('div');d.className='msg '+(role==='user'?'me':'bot');if(role==='user')d.textContent=text;else{d.classList.add('md');d.innerHTML=md(text)}$('log').appendChild(d);$('log').scrollTop=1e9;return d}
+function renderLog(){$('log').innerHTML='';if(!hist.length)welcome();hist.forEach(h=>add(h.role,h.content))}
+
+/* ---------- Voice: dictation + text-to-speech ---------- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec=null,listening=false;
+function micMsg(c){
+ const blocked='Microphone access is blocked. Allow it for this site (lock icon in the address bar) and try again. Speech input also needs https:// or localhost, so it will not work if this file is opened directly from disk.';
+ const m={'not-allowed':blocked,'service-not-allowed':blocked,
+  'audio-capture':'No microphone was found. Plug one in or check your system sound settings.',
+  'network':'Speech recognition could not reach its online service. Check your internet connection and try again.',
+  'no-speech':'I didn’t hear anything. Tap the microphone and speak again.',
+  'language-not-supported':'This browser does not support the selected speech language.'};
+ return m[c]||('Speech recognition failed ('+c+').')}
+$('mic').onclick=()=>{
+ if(!SR){add('assistant','Voice input isn’t supported in this browser. Please use Chrome or Edge.');return}
+ if(VM.on)return;
+ if(listening){try{rec.stop()}catch(e){}return}
+ stopSay();
+ const r=rec=new SR();r.lang='en-IN';r.interimResults=true;r.continuous=false;let sent=false;
+ r.onstart=()=>{listening=true;$('mic').classList.add('live')};
+ r.onresult=e=>{$('in').value=[...e.results].map(x=>x[0].transcript).join('');if(!sent&&e.results[e.results.length-1].isFinal){sent=true;$('speak').checked=true;try{r.stop()}catch(x){}send()}};
+ r.onend=()=>{listening=false;$('mic').classList.remove('live')};
+ r.onerror=e=>{listening=false;$('mic').classList.remove('live');if(e.error!=='aborted')add('assistant','🎙️ '+micMsg(e.error))};
+ try{r.start()}catch(e){listening=false;$('mic').classList.remove('live');add('assistant','🎙️ Could not start the microphone: '+e.message)}
+};
+
+/* Text-to-speech. Uses the browser’s built-in speechSynthesis (free, no API). Speech is split into short chunks because Chrome
+   silently stops long utterances; failures are reported through the fail callback instead of being treated as “finished”. */
+let sayId=0;
+const TTS={ok:!!(window.speechSynthesis&&window.SpeechSynthesisUtterance),keep:null,timer:0,wd:0,noted:''};
+function plain(t){return t.replace(/```[\s\S]*?```/g,' ').replace(/\[(.*?)\]\(.*?\)/g,'$1').replace(/[*_`#>|~]/g,'').replace(/\s+/g,' ').trim()}
+function voices(){return TTS.ok?speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)):[]}
+function pickVoice(){const all=TTS.ok?speechSynthesis.getVoices():[],want=store.get('voice','');
+ return all.find(v=>v.name===want)||all.find(v=>v.lang==='en-IN')||all.find(v=>/^en/i.test(v.lang)&&v.default)||all.find(v=>/^en/i.test(v.lang))||null}
+function speechChunks(t){const out=[];(t.match(/[^.!?;:\n]+[.!?;:]*\s*/g)||[t]).forEach(s=>{s=s.trim();if(!s)return;const l=out[out.length-1];if(l&&(l+' '+s).length<=180)out[out.length-1]=l+' '+s;else out.push(s)});
+ return out.flatMap(c=>c.length<=250?[c]:(c.match(/[\s\S]{1,220}/g)||[]).map(x=>x.trim()).filter(Boolean))}
+function stopSay(){sayId++;clearTimeout(TTS.timer);clearTimeout(TTS.wd);TTS.keep=null;if(TTS.ok){try{speechSynthesis.cancel()}catch(e){}}}
+function ttsMsg(er){return er==='unsupported'?'This browser can’t speak replies aloud (no speech synthesis).':
+ er==='not-allowed'?'The browser blocked audio playback until you interact with the page.':
+ er==='timeout'?'The browser did not start speaking. No usable voice may be installed, or the device audio is muted.':
+ er==='language-unavailable'||er==='voice-unavailable'?'No installed voice can speak this reply.':
+ 'Speech output failed ('+er+').'}
+function ttsFail(er){const m=ttsMsg(er);if(TTS.noted===m)return;TTS.noted=m;add('assistant','🔇 '+m)}
+/* say(text, onFinished, onFailed): only one reply can ever play; calling it again (or stopSay) cancels the previous one. */
+function say(t,done,fail){
+ stopSay();const id=sayId;
+ if(!TTS.ok){fail&&fail('unsupported');return}
+ const parts=speechChunks(plain(t).slice(0,3000));if(!parts.length){done&&done();return}
+ let i=0;const dead=()=>id!==sayId;
+ const next=()=>{
+  if(dead())return;
+  if(i>=parts.length){TTS.keep=null;done&&done();return}
+  const text=parts[i++],u=new SpeechSynthesisUtterance(text);TTS.keep=u; /* keep a reference: Chrome can garbage-collect it and never fire onend */
+  const v=pickVoice();if(v){u.voice=v;u.lang=v.lang}
+  u.rate=store.get('rate',1);
+  let over=false,started=false;
+  const adv=()=>{if(over||dead())return;over=true;clearTimeout(TTS.wd);next()};
+  const bad=er=>{if(over||dead())return;over=true;sayId++;clearTimeout(TTS.wd);try{speechSynthesis.cancel()}catch(e){}fail&&fail(er)};
+  u.onstart=()=>{started=true;clearTimeout(TTS.wd);TTS.wd=setTimeout(adv,Math.max(4000,text.length*130/(u.rate||1)+2500))}; /* safety net if onend never fires */
+  u.onend=adv;
+  u.onerror=e=>{const er=(e&&e.error)||'unknown';if(er==='interrupted'||er==='canceled')return;bad(er)};
+  TTS.wd=setTimeout(()=>{if(!started)bad('timeout')},6000);
+  try{speechSynthesis.resume();speechSynthesis.speak(u)}catch(e){bad('synthesis-failed')}
+ };
+ try{speechSynthesis.resume()}catch(e){}
+ TTS.timer=setTimeout(next,60); /* Chrome can drop a speak() issued in the same tick as cancel() */
+}
+
+/* ---------- Reminders ---------- */
+function fmt(t){return new Date(t).toLocaleString([], {dateStyle:'medium',timeStyle:'short'})}
+function renderRems(){const l=$('rl');l.innerHTML='';if(!rems.length){l.innerHTML='<small style="color:var(--mute)">No reminders yet.</small>';return}
+ rems.sort((a,b)=>a.at-b.at).forEach(r=>{const d=document.createElement('div');d.className='rem'+(r.done?' done':'')+(!r.done&&r.at<=Date.now()?' due':'');d.innerHTML='<div>'+esc(r.text)+'<small>'+fmt(r.at)+'</small></div>';
+ const ok=document.createElement('button');ok.textContent=r.done?'↺':'✓';ok.title='Toggle done';ok.onclick=()=>{r.done=!r.done;r.fired=r.done;save();renderRems()};
+ const x=document.createElement('button');x.textContent='✕';x.title='Delete';x.onclick=()=>{rems=rems.filter(q=>q!==r);save();renderRems()};
+ const w=document.createElement('div');w.append(ok,x);d.appendChild(w);l.appendChild(d)})}
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function save(){store.set('rems',rems)}
+function addRem(text,at){rems.push({text,at,done:false,fired:false});save();renderRems();if('Notification' in window&&Notification.permission==='default')Notification.requestPermission()}
+$('radd').onclick=()=>{const t=$('rt').value.trim(),w=$('rw').value;if(!t||!w){alert('Enter a task and a time.');return}addRem(t,new Date(w).getTime());$('rt').value='';$('rw').value=''};
+function beep(){try{const c=new (window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.value=.15;o.start();o.stop(c.currentTime+.5)}catch(e){}}
+setInterval(()=>{let ch=false;rems.forEach(r=>{if(!r.done&&!r.fired&&r.at<=Date.now()){r.fired=true;ch=true;const m='Reminder: '+r.text;add('assistant','⏰ '+m);beep();say(m,null,ttsFail);if('Notification' in window&&Notification.permission==='granted')new Notification('Zenvia',{body:m})}});if(ch){save();renderRems()}},5000);
+/* Parse "remind me to X in 10 minutes" / "at 6 pm" */
+function parseRemind(t){
+ let m=t.match(/remind me to (.+?) in (\d+)\s*(second|sec|minute|min|hour|hr|day)s?/i);
+ if(m){const n=+m[2],u=m[3].toLowerCase();const ms=u.startsWith('s')?1e3:u.startsWith('m')?6e4:u.startsWith('h')?36e5:864e5;return{text:m[1],at:Date.now()+n*ms}}
+ m=t.match(/remind me to (.+?) at (\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+ if(m){let h=+m[2];const mi=+(m[3]||0),ap=(m[4]||'').toLowerCase();if(ap==='pm'&&h<12)h+=12;if(ap==='am'&&h===12)h=0;const d=new Date();d.setHours(h,mi,0,0);if(d<=Date.now())d.setDate(d.getDate()+1);return{text:m[1],at:d.getTime()}}
+ return null}
+
+/* ---------- API ---------- */
+const PRESETS={
+ anthropic:{label:'Anthropic',model:'claude-sonnet-4-6',fallback:'',base:'https://api.anthropic.com/v1',models:['claude-sonnet-4-6','claude-opus-4-5','claude-haiku-4-5'],ok:m=>/^claude/i.test(m)},
+ gemini:{label:'Google Gemini',model:'gemini-3.5-flash-lite',fallback:'gemini-3.1-flash-lite',base:'https://generativelanguage.googleapis.com/v1beta/openai/',models:['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-2.5-flash-lite','gemini-3.8-flash','gemini-3.6-flash','gemini-2.5-flash','gemini-2.5-pro'],ok:m=>/^(gemini|gemma)/i.test(m)},
+ openai:{label:'OpenAI-compatible',model:'gpt-4o-mini',fallback:'',base:'https://api.openai.com/v1',models:['gpt-4o-mini','gpt-4o'],ok:()=>true}
+};
+function loadCfg(){
+ const c=store.get('cfg2',null);
+ if(c&&c.profiles){Object.keys(PRESETS).forEach(k=>{const d={key:'',model:PRESETS[k].model,base:PRESETS[k].base,fallback:PRESETS[k].fallback};c.profiles[k]=Object.assign(d,c.profiles[k]);if(c.profiles[k].fallback===undefined)c.profiles[k].fallback=PRESETS[k].fallback});return c}
+ const n={active:'anthropic',profiles:{}};
+ Object.keys(PRESETS).forEach(k=>n.profiles[k]={key:'',model:PRESETS[k].model,base:PRESETS[k].base,fallback:PRESETS[k].fallback});
+ const o=store.get('cfg',null); /* migrate settings saved by the first version */
+ if(o){const p=/generativelanguage/i.test(o.base||'')?'gemini':(o.prov==='openai'?'openai':'anthropic');
+  n.active=p;n.profiles[p].key=o.key||'';
+  if(p==='anthropic'&&o.model)n.profiles[p].model=o.model;
+  if(p==='openai'&&o.base)n.profiles[p].base=o.base;}
+ return n}
+let cfg=loadCfg();
+const saveCfg=()=>store.set('cfg2',cfg);
+const noReasonModels=store.get('noReason',{});
+/* One-time speed migration: moves the Gemini profile to a Flash-Lite model. API key and Base URL are NOT touched. */
+if(cfg.speed!==1){const g=cfg.profiles.gemini;if(g&&!/lite/i.test(g.model||'')){g.model='gemini-3.5-flash-lite';g.fallback='gemini-3.1-flash-lite'}cfg.speed=1;saveCfg()}
+function cleanBase(b,def){return (b||def).trim().replace(/\/chat\/completions\/?$/i,'').replace(/\/v1\/messages\/?$/i,'').replace(/\/+$/,'')}
+function cleanModel(p,m){m=(m||'').trim().replace(/^models\//,'');return m||PRESETS[p].model}
+function endpointFor(p,base){return p==='anthropic'?'https://api.anthropic.com/v1/messages':cleanBase(base,PRESETS[p].base)+'/chat/completions'}
+function badge(){const p=cfg.active,pr=cfg.profiles[p];$('badge').textContent='· '+PRESETS[p].label+' / '+cleanModel(p,pr.model)+(pr.fallback?' (backup: '+pr.fallback+')':'')}
+
+/* Server key mode: if the site owner set an API key on the server (Netlify env var), visitors need no key of their own. */
+const PROXY='/.netlify/functions/chat',SERVER={ok:false,providers:[],def:''};
+async function probeServer(){
+ try{const r=await fetch(PROXY,{cache:'no-store'});if(!r.ok)return;const j=await r.json();
+  if(j&&j.ok&&Array.isArray(j.providers)&&j.providers.length){SERVER.ok=true;SERVER.providers=j.providers;SERVER.def=j.default||j.providers[0];
+   const a=cfg.active;if(!(cfg.profiles[a]&&(cfg.profiles[a].key||'').trim())&&!SERVER.providers.includes(a)){cfg.active=SERVER.providers.includes(SERVER.def)?SERVER.def:SERVER.providers[0]}
+   else if(!(cfg.profiles[a].key||'').trim()&&SERVER.providers.includes(SERVER.def)&&!store.get('cfg2',null)){cfg.active=SERVER.def}
+   badge()}}catch(e){/* no server key available (for example when opened as a plain file) */}
+}
+const TEMP={502:1,503:1,504:1},MAX_RETRIES=3,sleep=ms=>new Promise(r=>setTimeout(r,ms));
+/* One request. With o.onDelta it streams (text appears as it is generated); without it, it waits for the full reply. Returns {text,finish}. */
+async function callAPI(msgs,c,sys,o){
+ o=o||{};c=c||{prov:cfg.active,...cfg.profiles[cfg.active]};sys=sys||MODES[mode].s;
+ const prov=c.prov,key=(c.key||'').trim(),model=cleanModel(prov,c.model);
+ const useProxy=!key&&SERVER.ok&&SERVER.providers.includes(prov);
+ if(!key&&!useProxy)throw new Error('No API key is set. Open Settings, choose a provider and paste your API key. (Site owners: add GEMINI_API_KEY, ANTHROPIC_API_KEY or OPENAI_API_KEY in the server settings so visitors need no key.)');
+ if(!PRESETS[prov].ok(model))throw new Error('The assistant is not configured correctly. Please contact the site administrator.');
+ const url=useProxy?PROXY:endpointFor(prov,c.base),stream=typeof o.onDelta==='function'&&!useProxy,maxTok=o.maxTokens||1000;
+ const eff=(prov==='gemini'&&!o.noReason&&!noReasonModels[model]&&/^gemini-(2\.5|3)/i.test(model))?'low':null; /* low thinking = faster */
+ let init;
+ if(prov==='anthropic'){
+  const body={model,max_tokens:maxTok,system:sys,messages:msgs,stream};
+  init=useProxy?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({provider:prov,payload:body})}
+   :{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)};
+ }else{
+  const body={model,messages:[{role:'system',content:sys},...msgs],max_tokens:maxTok,stream};if(eff)body.reasoning_effort=eff;
+  init=useProxy?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({provider:prov,payload:body})}
+   :{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+key},body:JSON.stringify(body)};
+ }
+ if(o.signal)init.signal=o.signal;
+ let r;try{r=await fetch(url,init)}catch(e){if(e&&e.name==='AbortError')throw e;throw new Error('Could not reach '+url+'. Check your internet connection, the Base URL, or whether the page is blocked from calling this API (CORS).')}
+ if(!r.ok){
+  const raw=await r.text();let j=null;try{j=JSON.parse(raw)}catch(e){}
+  const e0=Array.isArray(j)?j[0]:j;const msg=(e0&&e0.error&&(e0.error.message||e0.error))||raw.slice(0,200)||r.statusText;
+  /* If the model rejects the thinking setting, remember it and resend once without it (a compatibility fix, not a server-error retry). */
+  if(r.status===400&&eff&&/reason|think|effort/i.test(String(msg))){noReasonModels[model]=1;store.set('noReason',noReasonModels);return callAPI(msgs,c,sys,{...o,noReason:true})}
+  const hint=r.status===503?' Hint: the model is overloaded; this is temporary.':r.status===404?' Hint: 404 usually means the model ID or URL is wrong for this provider.':r.status===401||r.status===403?' Hint: check that the API key is correct and enabled.':r.status===429?' Hint: rate limit or quota reached; wait and retry.':'';
+  const err=new Error(PRESETS[prov].label+' returned HTTP '+r.status+' for model “'+model+'” at '+url+': '+msg+hint);err.status=r.status;throw err}
+ if(!stream){
+  const j=await r.json();
+  const t=prov==='anthropic'?(j.content||[]).map(x=>x.text||'').join(''):(j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content);
+  const fr=prov==='anthropic'?(j.stop_reason==='max_tokens'?'length':'stop'):((j.choices&&j.choices[0]&&j.choices[0].finish_reason)||'');
+  if(!t)throw new Error(fr==='length'?'The model used its whole token budget before answering. Please try again.':'The API replied without any text. Try again or pick another model.');
+  if(useProxy&&typeof o.onDelta==='function')o.onDelta(t,t);return{text:t,finish:fr}
+ }
+ const reader=r.body.getReader(),dec=new TextDecoder();let buf='',full='',fin='';
+ for(;;){
+  const {done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});
+  let i;while((i=buf.indexOf('\n'))>=0){
+   const line=buf.slice(0,i).trim();buf=buf.slice(i+1);if(!line.startsWith('data:'))continue;
+   const d=line.slice(5).trim();if(!d||d==='[DONE]')continue;let j;try{j=JSON.parse(d)}catch(e){continue}
+   let t='';
+   if(prov==='anthropic'){
+    if(j.type==='content_block_delta'&&j.delta&&j.delta.text)t=j.delta.text;
+    else if(j.type==='message_delta'&&j.delta&&j.delta.stop_reason)fin=j.delta.stop_reason==='max_tokens'?'length':'stop';
+    else if(j.type==='error')throw new Error((j.error&&j.error.message)||'Stream error');
+   }else{
+    const e0=Array.isArray(j)?j[0]:j;if(e0&&e0.error)throw new Error(e0.error.message||'Stream error');
+    const ch=j.choices&&j.choices[0];if(ch){if(ch.delta&&ch.delta.content)t=ch.delta.content;if(ch.finish_reason)fin=ch.finish_reason}
+   }
+   if(t){full+=t;if(typeof o.onDelta==='function')o.onDelta(t,full)}
+  }
+ }
+ if(!full)throw new Error(fin==='length'?'The model used its whole token budget before answering. Please try again.':'The API replied without any text. Try again or pick another model.');
+ return{text:full,finish:fin}
+}
+/* Retries ONLY temporary server errors (502/503/504), up to 3 times (~0.6s, 1.2s, 2.4s), then ONE try on the backup model.
+   Nothing is retried once text has started streaming, after Stop, or for errors like 400/401/404/429. */
+async function callWithRetry(msgs,sys,o,onStatus){
+ const p=cfg.active,pr=cfg.profiles[p],c={prov:p,...pr};
+ const primary=cleanModel(p,pr.model),backup=(pr.fallback||'').trim().replace(/^models\//,'');
+ let started=false;const o2={...o};
+ /* Only wrap onDelta when the caller really supplied one. Always adding it forced streaming and then called an undefined o.onDelta (the quiz bug). */
+ if(typeof o.onDelta==='function')o2.onDelta=(t,f)=>{started=true;o.onDelta(t,f)};else delete o2.onDelta;
+ const stop=e=>e.name==='AbortError'||started||!TEMP[e.status];
+ for(let i=0;i<=MAX_RETRIES;i++){
+  try{const r=await callAPI(msgs,c,sys,o2);return{...r,model:primary}}
+  catch(e){if(stop(e))throw e;
+   if(i<MAX_RETRIES){const wait=600*Math.pow(2,i)+Math.floor(Math.random()*200);onStatus&&onStatus('Server busy. Retrying in '+(wait/1000).toFixed(1)+'s… (retry '+(i+1)+' of '+MAX_RETRIES+')');await sleep(wait)}}
+ }
+ if(backup&&backup!==primary&&PRESETS[p].ok(backup)){
+  onStatus&&onStatus('Still busy. Trying backup model '+backup+'…');
+  try{const r=await callAPI(msgs,{...c,model:backup},sys,o2);return{...r,model:backup,usedBackup:true}}
+  catch(e){if(stop(e))throw e}
+ }
+ const f=new Error('FRIENDLY_503');f.friendly=true;f.primary=primary;f.backup=backup&&backup!==primary?backup:'';throw f
+}
+
+/* ---------- Speed helpers ---------- */
+/* Send only the last few messages (more for interview practice), each trimmed, and always starting with a user turn. */
+function ctxFor(h){const n=mode==='interview'?10:6;let a=h.slice(-n).map(m=>({role:m.role,content:m.content.length>1500?m.content.slice(0,1500)+'…':m.content}));while(a.length&&a[0].role!=='user')a.shift();return a}
+function styleFor(t){
+ const detailed=!$('short').checked||/\b(detail(ed)?|in[- ]depth|step[- ]by[- ]step|elaborate|comprehensive|long answer|full answer|essay)\b/i.test(t);
+ return detailed
+  ?{max:1600,rule:' Be well organised and thorough but efficient (under 400 words).'}
+  :{max:1000,rule:' Be concise and direct: about 100–200 words (never more than 250) unless the user asks for detail. Lead with the answer. No filler, no restating the question, no closing offers. Use a short list only when it helps.'}}
+/* Answer trivial messages locally: no API call, instant. */
+function localReply(t){
+ if(/^(hi|hello|hey|good (morning|afternoon|evening))[\s!.]*$/i.test(t))return'Hi! What would you like to work on: a topic, interview practice, or a task reminder?';
+ if(/^(thanks|thank you|thx|ok thanks|great thanks)[\s!.]*$/i.test(t))return'You’re welcome!';
+ if(/\b(what('?s| is) the (time|date)|what time is it|today'?s date)\b/i.test(t))return'It’s '+new Date().toLocaleString([], {dateStyle:'full',timeStyle:'short'})+'.';
+ return null}
+
+let busy=false,ctrl=null;
+async function send(txt){
+ if(busy)return;
+ const t=(txt||$('in').value).trim();if(!t)return;$('in').value='';stopSay();
+ if(!hist.length)$('log').innerHTML='';
+ const rm=parseRemind(t),lr=rm?null:localReply(t);
+ if(rm||lr){
+  hist.push({role:'user',content:t});add('user',t);
+  const a=rm?(addRem(rm.text,rm.at),'Done. I’ll remind you to “'+rm.text+'” at '+fmt(rm.at)+'.'):lr;
+  hist.push({role:'assistant',content:a});add('assistant',a);hist=hist.slice(-60);store.set('hist',hist);spoke(a);return}
+ busy=true;ctrl=new AbortController();$('send').textContent='Stop';
+ const msgs=[...ctxFor(hist),{role:'user',content:t}];   /* history is only updated after the reply */
+ const st=styleFor(t),sys=MODES[mode].s+st.rule+(VM.on?VOICE_RULE:'');
+ const ue=add('user',t),w=add('assistant','…');
+ const t0=performance.now();let acc='',first=0,raf=0;
+ const paint=()=>{raf=0;w.innerHTML=md(acc);if(VM.on&&VM.state==='think')$('vrp').textContent=plain(acc);const L=$('log');if(L.scrollHeight-L.scrollTop-L.clientHeight<160)L.scrollTop=L.scrollHeight};
+ const onDelta=(d,full)=>{if(!first)first=performance.now()-t0;acc=full;if(!raf)raf=requestAnimationFrame(paint)};
+ const finish=(note)=>{if(raf)cancelAnimationFrame(raf);w.innerHTML=md(acc+(note||''));
+  const m=document.createElement('div');m.style.cssText='font-size:11px;opacity:.6;margin-top:6px';
+  m.textContent=(first?'First words in '+(first/1000).toFixed(1)+'s · ':'')+'done in '+((performance.now()-t0)/1000).toFixed(1)+'s';w.appendChild(m)};
+ try{
+  const r=await callWithRetry(msgs,sys,{maxTokens:st.max,onDelta,signal:ctrl.signal},m=>{if(!acc)w.textContent=m});
+  finish((r.finish==='length'?'\n\n(Shortened. Say “continue” for more.)':'')+(r.usedBackup?'\n\n— Answered by backup model '+r.model+' because the main model was busy.':''));
+  hist.push({role:'user',content:t},{role:'assistant',content:r.text});
+  spoke(r.text);
+ }catch(e){
+  if(acc){ /* partial answer (Stop pressed or connection dropped): keep what arrived, no retry, no duplicate send */
+   finish(e.name==='AbortError'?'\n\n(Stopped.)':'\n\n(Connection interrupted. The answer above is partial.)');
+   hist.push({role:'user',content:t},{role:'assistant',content:acc});
+  }else{
+   if(e.friendly)w.textContent='⚠️ The assistant is very busy right now and couldn’t answer after '+(MAX_RETRIES+1)+' tries on '+e.primary+(e.backup?' and one try on the backup model '+e.backup:'')+'. This is a temporary overload on Google’s side, not a problem with your key. Your message is back in the box, so please wait a minute and press Send again.';
+   else if(e.name==='AbortError')w.textContent='Stopped.';
+   else w.textContent='⚠️ '+e.message;
+   ue.remove();$('in').value=t;
+  }
+ }finally{const vc=VM.cancelled;VM.cancelled=false;
+  if(VM.on&&VM.state==='think'){if(vc)setTimeout(vlisten,0);else{vset('error','Couldn’t get a reply');$('vrp').textContent='';verr(w.textContent.replace(/^⚠️\s*/,'')+' Tap the circle to try again.')}}
+  busy=false;ctrl=null;$('send').textContent='Send';hist=hist.slice(-60);store.set('hist',hist)}
+}
+$('send').onclick=()=>{if(busy&&ctrl)ctrl.abort();else send()};
+$('in').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
+
+/* ---------- Markdown, welcome, views ---------- */
+function md(s){
+ s=esc(s);const code=[];
+ s=s.replace(/```(?:\w+)?\n?([\s\S]*?)```/g,(_,c)=>{code.push(c);return'\u0000'+(code.length-1)+'\u0000'});
+ s=s.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<b>$1</b>').replace(/(^|[\s(])\*([^*\n]+)\*/g,'$1<i>$2</i>');
+ let out='',list='';const end=()=>{if(list){out+='</'+list+'>';list=''}};
+ s.split('\n').forEach(l=>{let m;
+  if(m=l.match(/^\s*[-*•]\s+(.*)/)){if(list!=='ul'){end();out+='<ul>';list='ul'}out+='<li>'+m[1]+'</li>'}
+  else if(m=l.match(/^\s*\d+[.)]\s+(.*)/)){if(list!=='ol'){end();out+='<ol>';list='ol'}out+='<li>'+m[1]+'</li>'}
+  else{end();if(m=l.match(/^#{1,4}\s+(.*)/))out+='<h4>'+m[1]+'</h4>';else if(l.trim())out+='<p>'+l+'</p>'}});
+ end();return out.replace(/\u0000(\d+)\u0000/g,(_,i)=>'<pre><code>'+code[i]+'</code></pre>')}
+function welcome(){const d=document.createElement('div');d.className='wel';
+ d.innerHTML='<h2>How can I help today?</h2><p>Ask a question, practise for an interview, plan your week, or test yourself with a quiz.</p><div class="wg"></div>';
+ [['Talk to Zenvia','Hands-free voice conversation',vopen],['Take a quiz','Test yourself on any topic',()=>setMode('quiz')],['Mock interview','Practise with live feedback',()=>setMode('interview')],['Plan my week','Turn goals into small steps',()=>setMode('planner')]].forEach(([t,u,f])=>{const b=document.createElement('button');b.className='wc';b.innerHTML='<b>'+t+'</b><span>'+u+'</span>';b.onclick=f;d.lastChild.appendChild(b)});
+ $('log').appendChild(d)}
+function setMode(k){mode=k;store.set('mode',k);renderModes();renderChips();applyView();$('side').classList.remove('open')}
+function applyView(){const q=mode==='quiz';$('qz').hidden=!q;$('log').hidden=q;$('chips').hidden=q;document.querySelector('.bar').hidden=q;if(q&&!$('qz').innerHTML)qsetup()}
+function spoke(t){if(VM.on){verr('');VM.replay=null;vset('speak','Speaking…');$('vrp').textContent=plain(t);vspeak(t)}else if($('speak').checked)say(t,null,ttsFail)}
+
+/* ---------- Voice assistant ---------- */
+const VM={on:false,state:'idle',paused:false,rec:null,replay:null,cancelled:false};
+const VOICE_RULE=' You are speaking aloud in a live voice conversation: answer in at most three short sentences of plain spoken English, with no markdown, lists or symbols.';
+function vset(s,t){VM.state=s;$('vst').textContent=t;$('vo').dataset.s=s}
+function verr(m){$('verr').textContent=m||''}
+function fillVoices(){const v=voices(),sel=$('vvoice'),sv=store.get('voice','');
+ if(!v.length){sel.innerHTML='<option value="">Browser default voice</option>';return}
+ sel.innerHTML=v.map(x=>'<option value="'+esc(x.name)+'">'+esc(x.name)+'</option>').join('');sel.value=v.some(x=>x.name===sv)?sv:((v.find(x=>x.lang==='en-IN')||v[0]||{}).name||'')}
+/* Fully release the microphone: detach handlers first so nothing restarts it, then abort. */
+function vkill(){const r=VM.rec;VM.rec=null;if(r){r.onresult=r.onerror=r.onend=r.onstart=null;try{r.abort()}catch(e){}}}
+function vspeak(t){
+ say(t,()=>{if(VM.on&&VM.state==='speak')vlisten()},er=>{
+  if(!VM.on)return;VM.replay=null;
+  if(er==='not-allowed'){VM.replay=t;vset('error','Tap the circle to hear the reply');verr(ttsMsg(er))}
+  else{verr(ttsMsg(er)+' The reply is shown above as text.');vset('idle','Reply shown as text');setTimeout(()=>{if(VM.on&&VM.state==='idle'&&!VM.paused)vlisten()},1500)}})}
+function vlisten(){
+ if(!VM.on||VM.paused)return;
+ stopSay();vkill();vset('listen','Listening…');$('vtr').textContent='';
+ const r=new SR();VM.rec=r;r.lang='en-IN';r.interimResults=true;r.continuous=false;let got=false;
+ r.onresult=e=>{if(got)return;const t=[...e.results].map(x=>x[0].transcript).join('');$('vtr').textContent=t;
+  if(e.results[e.results.length-1].isFinal){got=true;vkill();vhear(t.trim())}};
+ r.onerror=e=>{const c=e.error;if(c==='no-speech'||c==='aborted')return;vkill();vset('error','Microphone problem');verr(micMsg(c)+' Tap the circle to try again.')};
+ r.onend=()=>{if(VM.rec===r)VM.rec=null;if(!got&&VM.on&&!VM.paused&&VM.state==='listen')setTimeout(()=>{if(VM.on&&!VM.paused&&VM.state==='listen'&&!VM.rec)vlisten()},250)};
+ try{r.start()}catch(e){vkill();vset('error','Microphone problem');verr('Could not start the microphone: '+e.message)}}
+function vhear(t){if(!t){vlisten();return}
+ if(/^(stop|end|exit|close|goodbye|bye)( voice( mode)?)?[\s.!]*$/i.test(t)){vclose();return}
+ if(busy){vset('idle','Still answering…');verr('Still finishing the previous answer. Please try again in a moment.');setTimeout(vlisten,1500);return}
+ verr('');vset('think','Thinking…');send(t)}
+function vopen(){if(!SR){alert('Voice mode needs speech recognition, which this browser does not support. Please use Chrome or Edge.');return}
+ VM.on=true;VM.paused=false;VM.replay=null;VM.cancelled=false;$('vmute').textContent='Pause';$('vo').hidden=false;$('vrp').textContent='';
+ verr(TTS.ok?'':'This browser can’t speak aloud, so replies will appear as text only.');fillVoices();$('vrate').value=store.get('rate',1);$('orb').focus();vlisten()}
+function vclose(){VM.on=false;vkill();stopSay();if(ctrl)ctrl.abort();verr('');$('vo').hidden=true}
+function vpause(p){VM.paused=p;$('vmute').textContent=p?'Resume':'Pause';if(p){vkill();stopSay();vset('idle','Paused')}else vlisten()}
+$('vmode').onclick=vopen;$('vside').onclick=()=>{$('side').classList.remove('open');vopen()};$('vx').onclick=vclose;$('vmute').onclick=()=>vpause(!VM.paused);
+/* The circle is the main control: interrupt speech, cancel thinking, start/stop listening, or retry after an error. */
+$('orb').onclick=()=>{
+ if(VM.paused){vpause(false);return}
+ const s=VM.state;
+ if(s==='speak'){stopSay();vlisten()}
+ else if(s==='think'){if(ctrl){VM.cancelled=true;ctrl.abort()}}
+ else if(s==='listen'){vkill();vset('idle','Mic off. Tap to talk')}
+ else if(s==='error'&&VM.replay){const t=VM.replay;VM.replay=null;verr('');vset('speak','Speaking…');vspeak(t)}
+ else vlisten()};
+$('vvoice').onchange=e=>store.set('voice',e.target.value);$('vrate').oninput=e=>store.set('rate',+e.target.value);
+/* Never leave the mic or speaker running in the background. */
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&VM.on&&!VM.paused)vpause(true)});
+window.addEventListener('pagehide',()=>{if(VM.on)vclose();else stopSay()});
+$('speak').addEventListener('change',()=>{if(!$('speak').checked)stopSay()});
+
+/* ---------- Quiz ---------- */
+let Q=null,QSEL=-1;const QL='ABCD';
+function qstatus(msg,loading){const s=$('qst');if(!s)return;s.innerHTML=(loading?'<span class="spin" aria-hidden="true"></span>':'')+esc(msg)}
+function qsetup(){Q=null;QSEL=-1;const h=store.get('qh',[]).slice(0,5);
+ $('qz').innerHTML='<div class="qw"><h2 class="qh">Practice quiz</h2><p class="qp">Choose a topic and test yourself. Questions are written for you, with an explanation for every answer.</p>'+
+ '<label for="qt">Topic</label><input id="qt" placeholder="e.g. Python basics, HR interview questions, photosynthesis" value="'+esc(store.get('qtopic',''))+'">'+
+ '<div class="qrow"><div><label for="qn">Questions</label><select id="qn"><option>5</option><option selected>10</option><option>15</option></select></div><div><label for="qd">Difficulty</label><select id="qd"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div></div>'+
+ '<div class="chips" style="padding:12px 0 0">'+['Python basics','HR interview questions','Machine learning','Time management'].map(x=>'<button class="chip">'+x+'</button>').join('')+'</div>'+
+ '<button class="btn qgo" id="qgo">Generate quiz</button><div class="qst" id="qst" role="status"></div>'+
+ (h.length?'<h3 class="qs">Recent results</h3>'+h.map(x=>'<div class="rem"><div>'+esc(x.topic)+'<small>'+x.diff+', '+fmt(x.at)+'</small></div><b>'+x.score+'/'+x.total+'</b></div>').join(''):'')+'</div>';
+ $('qz').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{$('qt').value=c.textContent});
+ $('qgo').onclick=async()=>{const topic=$('qt').value.trim();if(!topic){qstatus('Enter a topic first.');return}
+  const n=+$('qn').value,diff=$('qd').value;store.set('qtopic',topic);$('qgo').disabled=true;qstatus('Writing your questions…',true);
+  try{
+   /* No onDelta here, so this is a normal (non-streaming) request. callWithRetry supports both modes. */
+   const r=await callWithRetry([{role:'user',content:'Write '+n+' multiple-choice questions about "'+topic+'" at '+diff+' difficulty. Return ONLY a JSON array, with no markdown fences and no commentary. Each item: {"q":"question","options":["...","...","...","..."],"answer":0,"why":"one-sentence explanation"} where answer is the 0-based index of the correct option. Exactly 4 options, one correct, plausible distractors, no letter prefixes in the options.'}],'You are an exam setter. Output only valid JSON, no commentary.',{maxTokens:Math.min(8000,n*320+1500)},m=>qstatus(m,true));
+   const items=qparse(r.text).slice(0,n);
+   if(items.length<2)throw new Error(r.finish==='length'?'The model ran out of space before finishing the questions. Try fewer questions.':'The questions came back in an unexpected format. Please try again.');
+   Q={topic,diff,items,i:0,score:0,picks:[]};qshow()}
+  catch(e){qstatus('⚠️ '+(e.friendly?'The model is busy right now. Wait a moment and try again.':e.message));if($('qgo'))$('qgo').disabled=false}}}
+/* Turns the model’s text into validated questions: exactly 4 distinct options and a valid correct answer. Bad items are dropped. */
+function qparse(t){t=String(t||'').replace(/```(?:json)?/gi,'').trim();
+ const tp=s=>{try{return JSON.parse(s)}catch(e){return null}};let arr=null;const a=t.indexOf('[');
+ if(a>=0){const b=t.lastIndexOf(']');if(b>a)arr=tp(t.slice(a,b+1));if(!Array.isArray(arr)){const c=t.lastIndexOf('}');if(c>a)arr=tp(t.slice(a,c+1)+']')}} /* second try repairs a reply cut off mid-array */
+ if(!Array.isArray(arr)){const o=tp(t.slice(Math.max(0,t.indexOf('{')),t.lastIndexOf('}')+1));if(o&&Array.isArray(o.questions))arr=o.questions}
+ if(!Array.isArray(arr))return[];
+ const out=[];arr.forEach(x=>{if(!x||typeof x!=='object')return;
+  const q=String(x.q||x.question||'').trim();let opts=x.options||x.choices;if(!q||!Array.isArray(opts))return;
+  opts=opts.map(s=>String(s==null?'':s).replace(/^\s*[A-Da-d][.):]\s+/,'').trim());
+  if(opts.length!==4||opts.some(s=>!s)||new Set(opts.map(s=>s.toLowerCase())).size!==4)return;
+  let ans=x.answer!==undefined?x.answer:x.correct;if(typeof ans==='string'){const s=ans.trim();ans=/^[A-Da-d]$/.test(s)?'abcd'.indexOf(s.toLowerCase()):/^\d$/.test(s)?+s:-1}
+  if(!Number.isInteger(ans)||ans<0||ans>3)return;
+  const o=opts.map((s,k)=>({s,ok:k===ans}));
+  for(let k=o.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[o[k],o[j]]=[o[j],o[k]]}
+  out.push({q,o,why:String(x.why||x.explanation||'').trim()})});
+ return out}
+function qshow(){const it=Q.items[Q.i],tot=Q.items.length;QSEL=-1;
+ $('qz').innerHTML='<div class="qw"><div class="qtop"><span>Question '+(Q.i+1)+' of '+tot+'</span><span>Score '+Q.score+'</span></div><div class="qbar"><i style="width:'+Q.i/tot*100+'%"></i></div><h2 class="qq">'+esc(it.q)+'</h2><button class="btn alt" id="qlis">Read aloud</button><div class="qo" id="qo" role="group" aria-label="Answer options"></div><div class="qx" id="qx" aria-live="polite"></div><div class="qfoot"><button class="btn alt" id="qquit">Quit quiz</button><button class="btn" id="qsub" disabled>Submit answer</button><button class="btn" id="qnext" hidden></button></div></div>';
+ it.o.forEach((o,k)=>{const b=document.createElement('button');b.className='qopt';b.innerHTML='<b>'+QL[k]+'</b><span>'+esc(o.s)+'</span>';b.onclick=()=>qsel(k);$('qo').appendChild(b)});
+ $('qsub').onclick=()=>{if(QSEL>=0)qpick(QSEL)};
+ $('qlis').onclick=()=>say(it.q+'. '+it.o.map((o,k)=>'Option '+QL[k]+'. '+o.s).join('. '),null,ttsFail);
+ $('qquit').onclick=()=>{if(confirm('Quit this quiz? Your progress will be lost.')){stopSay();qsetup()}};
+ $('qnext').onclick=()=>{stopSay();Q.i++;Q.i<tot?qshow():qdone()}}
+function qsel(k){if(!Q||!$('qo')||Q.picks[Q.i]!==undefined)return;QSEL=k;[...$('qo').children].forEach((b,j)=>{b.classList.toggle('sel',j===k);b.setAttribute('aria-pressed',String(j===k))});$('qsub').disabled=false}
+function qpick(k){if(!Q||Q.picks[Q.i]!==undefined)return;const it=Q.items[Q.i],ok=it.o[k].ok;Q.picks[Q.i]=k;if(ok)Q.score++;
+ [...$('qo').children].forEach((b,j)=>{b.disabled=true;b.classList.remove('sel');if(it.o[j].ok)b.classList.add('right');else if(j===k)b.classList.add('wrong')});
+ $('qx').innerHTML='<b>'+(ok?'Correct.':'Not quite.')+'</b> '+esc(it.why);$('qsub').hidden=true;
+ const n=$('qnext');n.hidden=false;n.textContent=Q.i+1<Q.items.length?'Next question':'See results';n.focus()}
+function qdone(){const tot=Q.items.length,pct=Math.round(Q.score/tot*100),h=store.get('qh',[]);
+ h.unshift({topic:Q.topic,diff:Q.diff,score:Q.score,total:tot,at:Date.now()});store.set('qh',h.slice(0,10));
+ const miss=Q.items.map((it,i)=>({it,i})).filter(x=>!x.it.o[Q.picks[x.i]].ok);
+ $('qz').innerHTML='<div class="qw"><div class="qres"><div class="qring" style="--p:'+pct+'"><b>'+pct+'%</b></div><div><h2 class="qh">'+Q.score+' of '+tot+' correct</h2><p class="qp" style="margin:0">'+(pct>=80?'Excellent work.':pct>=50?'Good effort. Review the misses below.':'Keep practising. Review the answers below.')+'</p></div></div>'+
+ '<h3 class="qs">Your answers</h3>'+Q.items.map((it,i)=>{const p=Q.picks[i],ok=it.o[p].ok;return'<div class="qrev '+(ok?'good':'bad')+'"><b>'+(ok?'✓ ':'✗ ')+(i+1)+'. '+esc(it.q)+'</b><div>Your answer: '+esc(it.o[p].s)+(ok?' <span class="okc">(correct)</span>':'')+'</div>'+(ok?'':'<div class="okc">Correct: '+esc(it.o.find(o=>o.ok).s)+'</div>')+'<small>'+esc(it.why)+'</small></div>'}).join('')+
+ '<div class="qfoot"><button class="btn alt" id="qnew">New quiz</button><button class="btn alt" id="qagain">Retake quiz</button>'+(miss.length?'<button class="btn" id="qexp">Explain my mistakes</button>':'')+'</div></div>';
+ $('qnew').onclick=qsetup;$('qagain').onclick=()=>{Q.i=0;Q.score=0;Q.picks=[];qshow()};
+ if(miss.length)$('qexp').onclick=()=>{const t='Briefly explain why the correct answers are right for these quiz questions I got wrong:\n'+miss.map(({it,i},n)=>(n+1)+'. '+it.q+' (I chose: '+it.o[Q.picks[i]].s+'; correct: '+it.o.find(o=>o.ok).s+')').join('\n');setMode('explain');send(t)}}
+document.addEventListener('keydown',e=>{if(mode!=='quiz'||!Q||!$('qo')||e.key.length!==1||/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||e.ctrlKey||e.metaKey)return;
+ const k='1234'.indexOf(e.key);const l=QL.indexOf(e.key.toUpperCase());const i=k>=0?k:l;if(i>=0&&$('qo').children[i])qsel(i)});
+
+/* ---------- Settings & extras ---------- */
+let draft=null;
+function fillDialog(){const p=$('prov').value,pr=draft.profiles[p];
+ $('key').value=pr.key;$('model').value=pr.model;$('base').value=pr.base;$('fallback').value=pr.fallback||'';
+ $('models').innerHTML=PRESETS[p].models.map(m=>'<option value="'+m+'">').join('');
+ $('endpoint').textContent='Requests go to: '+endpointFor(p,pr.base);$('testout').textContent=''}
+function readDialog(){const p=$('prov').value;draft.profiles[p]={key:$('key').value.trim(),model:$('model').value.trim(),base:$('base').value.trim(),fallback:$('fallback').value.trim().replace(/^models\//,'')}}
+$('set').onclick=()=>{draft=JSON.parse(JSON.stringify(cfg));$('prov').value=cfg.active;fillDialog();$('dlg').showModal()};
+$('prov').addEventListener('focus',function(){this.dataset.prev=this.value});
+$('prov').onchange=function(){const prev=this.dataset.prev||cfg.active,now=this.value;this.value=prev;readDialog();this.value=now;this.dataset.prev=now;fillDialog()};
+['key','model','base','fallback'].forEach(id=>$(id).addEventListener('input',()=>{readDialog();$('endpoint').textContent='Requests go to: '+endpointFor($('prov').value,$('base').value)}));
+$('showkey').onclick=()=>{const k=$('key');k.type=k.type==='password'?'text':'password';$('showkey').textContent=k.type==='password'?'Show':'Hide'};
+$('cancel').onclick=()=>$('dlg').close();
+$('forget').onclick=()=>{const p=$('prov').value;draft.profiles[p].key='';$('key').value='';cfg=JSON.parse(JSON.stringify(draft));saveCfg();$('testout').textContent='Key removed for '+PRESETS[p].label+'.'};
+$('save').onclick=()=>{readDialog();const p=$('prov').value,pr=draft.profiles[p],m=cleanModel(p,pr.model);
+ if(!PRESETS[p].ok(m)){$('testout').textContent='Model “'+m+'” is not a '+PRESETS[p].label+' model. Try '+PRESETS[p].model+'.';return}
+ if(pr.fallback&&!PRESETS[p].ok(pr.fallback)){$('testout').textContent='Backup model “'+pr.fallback+'” is not a '+PRESETS[p].label+' model.';return}
+ pr.model=m;pr.base=cleanBase(pr.base,PRESETS[p].base);draft.active=p;cfg=JSON.parse(JSON.stringify(draft));saveCfg();badge();$('dlg').close()};
+$('test').onclick=async()=>{readDialog();const p=$('prov').value,pr=draft.profiles[p];$('testout').textContent='Testing…';
+ try{const r=await callAPI([{role:'user',content:'Reply with the single word OK.'}],{prov:p,...pr},'You are a connection test.',{maxTokens:200});$('testout').textContent='✅ Connected to '+PRESETS[p].label+'. Reply: '+r.text.slice(0,40)}
+ catch(e){$('testout').textContent='⚠️ '+e.message}};
+$('clr').onclick=()=>{if(confirm('Clear this conversation?')){hist=[];store.set('hist',hist);renderLog()}};
+$('exp').onclick=()=>{const t=hist.map(h=>(h.role==='user'?'You: ':'Zenvia: ')+h.content).join('\n\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/plain'}));a.download='zenvia-chat.txt';a.click()};
+$('theme').onclick=()=>{const d=document.documentElement,dark=getComputedStyle(d).getPropertyValue('--bg').trim()==='#0e1327';d.dataset.theme=dark?'light':'dark'};
+$('menu').onclick=()=>$('side').classList.toggle('open');
+
+$('short').checked=store.get('short',true);$('short').onchange=()=>store.set('short',$('short').checked);
+renderModes();renderChips();renderRems();renderLog();badge();applyView();if(window.speechSynthesis)speechSynthesis.onvoiceschanged=fillVoices;
+probeServer();
+</script>
+</body>
+</html>
