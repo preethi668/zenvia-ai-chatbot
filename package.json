@@ -1,0 +1,24 @@
+{
+  "name": "zenvia-assistant",
+  "version": "1.0.0",
+  "description": "Single-file AI chatbot with voice mode, quizzes and reminders. Works with Anthropic, Google Gemini and OpenAI-compatible APIs.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "chatbot",
+    "ai-assistant",
+    "voice-assistant",
+    "javascript",
+    "claude",
+    "gemini",
+    "openai"
+  ],
+  "author": "",
+  "license": "MIT"
+}
